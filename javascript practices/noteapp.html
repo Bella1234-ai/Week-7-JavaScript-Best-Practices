@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2eb;
+    --surface: #fefcf8;
+    --surface2: #f0ece3;
+    --border: #ddd8ce;
+    --border2: #c8c2b6;
+    --text: #1c1a16;
+    --text2: #6b6560;
+    --text3: #9c978f;
+    --accent: #c17b3a;
+    --accent-light: #f5e8d8;
+    --danger: #c14040;
+    --danger-light: #fdf0f0;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    --shadow2: 0 4px 16px rgba(0,0,0,0.12);
+    --radius: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1814;
+      --surface: #221f1b;
+      --surface2: #2a2722;
+      --border: #38342e;
+      --border2: #4a453e;
+      --text: #f0ece3;
+      --text2: #a09a90;
+      --text3: #6b6560;
+      --accent: #d4924f;
+      --accent-light: #2a2218;
+      --danger: #d45a5a;
+      --danger-light: #251818;
+      --shadow: 0 1px 4px rgba(0,0,0,0.3);
+      --shadow2: 0 4px 16px rgba(0,0,0,0.4);
+    }
+  }
+
+  body {
+    font-family: 'Lora', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  #sidebar-header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #app-title {
+    font-family: 'Lora', serif;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  #app-title span {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  #new-btn {
+    width: 100%;
+    padding: 8px 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.15s;
+  }
+
+  #new-btn:hover { opacity: 0.88; }
+  #new-btn:active { opacity: 0.75; transform: scale(0.98); }
+
+  #search-wrap {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #search {
+    width: 100%;
+    padding: 7px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  #search::placeholder { color: var(--text3); }
+  #search:focus { border-color: var(--accent); }
+
+  #notes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  #notes-list::-webkit-scrollbar { width: 4px; }
+  #notes-list::-webkit-scrollbar-track { background: transparent; }
+  #notes-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .note-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.1s, border-color 0.1s;
+    position: relative;
+  }
+
+  .note-item:hover { background: var(--surface); }
+
+  .note-item.active {
+    background: var(--accent-light);
+    border-left-color: var(--accent);
+  }
+
+  .note-item-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+
+  .note-item-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .note-item-preview {
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+    font-style: italic;
+  }
+
+  #sidebar-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  /* MAIN EDITOR */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  #note-title-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-family: 'Lora', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  #note-title-input::placeholder { color: var(--text3); }
+
+  #delete-btn {
+    padding: 6px 12px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  #delete-btn:hover {
+    background: var(--danger-light);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  #note-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  #note-body {
+    flex: 1;
+    padding: 28px 48px;
+    outline: none;
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    line-height: 1.9;
+    color: var(--text);
+    overflow-y: auto;
+    background: var(--surface);
+    resize: none;
+    border: none;
+    white-space: pre-wrap;
+  }
+
+  #note-body::-webkit-scrollbar { width: 5px; }
+  #note-body::-webkit-scrollbar-track { background: transparent; }
+  #note-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  #note-body[data-empty="true"]:before {
+    content: attr(data-placeholder);
+    color: var(--text3);
+    font-style: italic;
+    pointer-events: none;
+  }
+
+  /* EMPTY STATES */
+  #empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text3);
+    background: var(--surface);
+  }
+
+  #empty-state .empty-icon {
+    font-size: 40px;
+    opacity: 0.4;
+  }
+
+  #empty-state p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  #empty-state button {
+    margin-top: 4px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #c0a95f;
+    border: none;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  #empty-state button:hover { opacity: 0.88; }
+
+  .no-notes-msg {
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+  }
+
+  /* tag badges */
+  #tags-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 48px 0;
+    background: var(--surface);
+  }
+
+  .tag-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+
+  #word-count {
+    padding: 6px 48px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <div id="app-title">my <span>notes</span></div>
+    <button id="new-btn" onclick="newNote()">+ new note</button>
+  </div>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="search notes..." oninput="renderList()" />
+  </div>
+  <div id="notes-list"></div>
+  <div id="sidebar-footer" id="count-footer"></div>
+</aside>
+
+<main id="main">
+  <div id="editor-container" style="display:none; flex:1; flex-direction:column; overflow:hidden; display:none;">
+    <div id="editor-toolbar">
+      <input id="note-title-input" type="text" placeholder="untitled note" oninput="onTitleChange()" />
+      <span id="note-date"></span>
+      <button id="delete-btn" onclick="deleteNote()">delete</button>
+    </div>
+    <div id="note-body"
+      contenteditable="true"
+      data-placeholder="start writing..."
+      oninput="onBodyChange()"
+    ></div>
+    <div id="word-count"></div>
+  </div>
+
+  <div id="empty-state">
+    <div class="empty-icon">✦</div>
+    <p>no note selected</p>
+    <button onclick="newNote()">create your first note</button>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = 'notes_app_v1';
+let notes = [];
+let activeId = null;
+let saveTimer = null;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    notes = raw ? JSON.parse(raw) : [];
+  } catch(e) { notes = []; }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 400);
+}
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  if (diff < 86400*7) return Math.floor(diff/86400) + 'd ago';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+function newNote() {
+  const note = {
+    id: genId(),
+    title: '',
+    body: '',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  notes.unshift(note);
+  save();
+  openNote(note.id);
+  renderList();
+  document.getElementById('note-title-input').focus();
+}
+
+function openNote(id) {
+  activeId = id;
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+
+  document.getElementById('empty-state').style.display = 'none';
+  const ec = document.getElementById('editor-container');
+  ec.style.display = 'flex';
+
+  document.getElementById('note-title-input').value = note.title;
+  const body = document.getElementById('note-body');
+  body.innerText = note.body;
+  updateBodyEmpty();
+  updateDate(note.updatedAt);
+  updateWordCount(note.body);
+  renderList();
+}
+
+function updateDate(ts) {
+  document.getElementById('note-date').textContent = formatDate(ts);
+}
+
+function updateBodyEmpty() {
+  const body = document.getElementById('note-body');
+  body.dataset.empty = body.innerText.trim() === '' ? 'true' : 'false';
+}
+
+function updateWordCount(text) {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const chars = text.length;
+  document.getElementById('word-count').textContent =
+    words + ' word' + (words !== 1 ? 's' : '') + ' · ' + chars + ' chars';
+}
+
+function onTitleChange() {
+  if (!activeId) return;
+  const note = notes.find(n => n.id === activeId);
+  if (!note) return;
+  note.title = document.getElementById('note-title-input').value;
+  note.updatedAt = Date.now();
+  updateDate(note.updatedAt);
+  bumpToTop(note);
+  scheduleSave();
+  renderList();
+}
+
+function onBodyChange() {
+  if (!activeId) return;
+  const note = notes.find(n => n.id === activeId);
+  if (!note) return;
+  const body = document.getElementById('note-body');
+  note.body = body.innerText;
+  note.updatedAt = Date.now();
+  updateDate(note.updatedAt);
+  updateBodyEmpty();
+  updateWordCount(note.body);
+  bumpToTop(note);
+  scheduleSave();
+  renderList();
+}
+
+function bumpToTop(note) {
+  const idx = notes.indexOf(note);
+  if (idx > 0) {
+    notes.splice(idx, 1);
+    notes.unshift(note);
+  }
+}
+
+function deleteNote() {
+  if (!activeId) return;
+  if (!confirm('delete this note?')) return;
+  notes = notes.filter(n => n.id !== activeId);
+  save();
+  activeId = null;
+  document.getElementById('editor-container').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'flex';
+  renderList();
+}
+
+function getQuery() {
+  return document.getElementById('search').value.trim().toLowerCase();
+}
+
+function renderList() {
+  const q = getQuery();
+  const filtered = q
+    ? notes.filter(n => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q))
+    : notes;
+
+  const list = document.getElementById('notes-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-notes-msg">' + (q ? 'no results' : 'no notes yet') + '</div>';
+  } else {
+    list.innerHTML = filtered.map(n => {
+      const active = n.id === activeId ? ' active' : '';
+      const title = n.title || '<span style="font-style:italic;opacity:0.5">untitled</span>';
+      const preview = n.body.split('\n').find(l => l.trim()) || '';
+      return `<div class="note-item${active}" onclick="openNote('${n.id}')">
+        <div class="note-item-title">${title}</div>
+        <div class="note-item-meta">${formatDate(n.updatedAt)}</div>
+        ${preview ? `<div class="note-item-preview">${preview.slice(0, 60)}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  const footer = document.getElementById('sidebar-footer');
+  footer.textContent = notes.length + ' note' + (notes.length !== 1 ? 's' : '') + ' · local';
+}
+
+// keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'n') { e.preventDefault(); newNote(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'f') { e.preventDefault(); document.getElementById('search').focus(); }
+});
+
+// init
+load();
+renderList();
+if (notes.length > 0) openNote(notes[0].id);
+</script>
+</body>
+</html>

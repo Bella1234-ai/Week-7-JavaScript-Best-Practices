@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Form</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #f0f4ff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background-image: radial-gradient(circle at 15% 50%, #e0e8ff, transparent 50%),
+                    radial-gradient(circle at 85% 30%, #fce4f3, transparent 50%);
+}
+
+.card {
+  background: rgb(240, 211, 211);
+  border-radius: 20px;
+  border: 2px solid #f0c3ed;
+  padding: 36px 40px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 4px 0 #c9b4cc;
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #000000;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #130e12;
+  margin-bottom: 28px;
+}
+
+/* save status badge */
+#save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #040105;
+  margin-bottom: 24px;
+  transition: color 0.3s;
+}
+
+#save-status .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #d1d7f1;
+  transition: background 0.3s;
+}
+
+#save-status.saving { color: #f97316; }
+#save-status.saving .dot { background: #f97316; animation: blink 0.6s ease infinite; }
+#save-status.saved  { color: #10b981; }
+#save-status.saved .dot  { background: #10b981; }
+
+@keyframes blink {
+  0%,100% { opacity:1; } 50% { opacity:0.2; }
+}
+
+.field { margin-bottom: 18px; }
+
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #030613;
+  margin-bottom: 6px;
+}
+
+label .req { color: #f43f8e; margin-left: 2px; }
+
+input, textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 2px solid #dde2f5;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1d2e;
+  background: #f7f8ff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input::placeholder, textarea::placeholder { color: #b0b7d9; font-weight: 600; }
+
+input:focus, textarea:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px #f3efff;
+  background: white;
+}
+
+textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* storage inspector */
+.inspector {
+  background: #1a1d2e;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 24px 0 20px;
+}
+
+.inspector-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #040507;
+  margin-bottom: 10px;
+}
+
+.inspector-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #2a2e45;
+}
+
+.inspector-row:last-child { border-bottom: none; }
+
+.ikey {
+  font-family: monospace;
+  font-size: 14px;
+  color: #03040a;
+}
+
+.ival {
+  font-family: monospace;
+  font-size: 14px;
+  color: #10b981;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ival.empty { color: #4a4f6e; font-style: italic; }
+
+/* buttons */
+.actions { display: flex; gap: 10px; }
+
+button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#submit-btn {
+  background: #7c3aed;
+  color: white;
+  border: 2px solid #7c3aed;
+  box-shadow: 0 4px 0 #5b21b6;
+}
+
+#submit-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 #5b21b6; }
+#submit-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #5b21b6; }
+
+#clear-btn {
+  background: white;
+  color: #9098be;
+  border: 2px solid #dde2f5;
+}
+
+#clear-btn:hover { border-color: #f87171; color: #e53e3e; }
+
+/* success */
+#success {
+  display: none;
+  background: #eafaf4;
+  border: 2px solid #10b981;
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #065f46;
+  margin-top: 16px;
+  box-shadow: 0 3px 0 #6ee7b7;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Contact Us</h1>
+  <p class="subtitle">Your draft is auto-saved — refresh the tab and it'll still be here!</p>
+
+  <div id="save-status">
+    <div class="dot"></div>
+    <span id="status-text">waiting for input...</span>
+  </div>
+
+  <form id="contact-form">
+    <div class="row">
+      <div class="field">
+        <label>First name <span class="req">*</span></label>
+        <input type="text" name="firstname" placeholder="Ada" />
+      </div>
+      <div class="field">
+        <label>Last name <span class="req">*</span></label>
+        <input type="text" name="lastname" placeholder="Lovelace" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Email <span class="req">*</span></label>
+      <input type="text" name="email" placeholder="ada@example.com" />
+    </div>
+
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" name="subject" placeholder="What's this about?" />
+    </div>
+
+    <div class="field">
+      <label>Message <span class="req">*</span></label>
+      <textarea name="message" placeholder="Type your message here..."></textarea>
+    </div>
+  </form>
+
+  <!-- live sessionStorage inspector -->
+  <div class="inspector">
+    <div class="inspector-title">sessionStorage — live view</div>
+    <div id="inspector-rows"></div>
+  </div>
+
+  <div class="actions">
+    <button id="clear-btn" type="button">✕ Clear</button>
+    <button id="submit-btn" type="button">Send message →</button>
+  </div>
+
+  <div id="success">
+    🎉 Message sent! Storage cleared.<br>
+    <span style="font-size:12px;font-weight:700;opacity:0.7">Refresh the tab — the form will be empty.</span>
+  </div>
+</div>
+
+<script>
+  // ── exact pattern from the exercise ──────────────────────────
+  const form   = document.getElementById("contact-form");
+  const inputs = form.querySelectorAll("input, textarea");
+
+  inputs.forEach(input => {
+    // Load saved value on page load
+    const saved = sessionStorage.getItem(`form_${input.name}`);
+    if (saved) {
+      input.value = saved;
+    }
+
+    // Save on input
+    input.addEventListener("input", () => {
+      sessionStorage.setItem(`form_${input.name}`, input.value);
+      showSaving();
+      updateInspector();
+    });
+  });
+
+  // Clear on successful submit
+  function submitForm() {
+    const firstname = form.querySelector('[name="firstname"]').value.trim();
+    const email     = form.querySelector('[name="email"]').value.trim();
+    const message   = form.querySelector('[name="message"]').value.trim();
+    if (!firstname || !email || !message) {
+      alert("Please fill in the required fields (first name, email, message).");
+      return;
+    }
+    // ── from the exercise ──
+    inputs.forEach(input => {
+      sessionStorage.removeItem(`form_${input.name}`);
+    });
+    inputs.forEach(i => i.value = "");
+    updateInspector();
+    setStatus("", "storage cleared ✓");
+    document.getElementById("success").style.display = "block";
+  }
+
+  // ── extras: status indicator + live inspector ─────────────────
+  let timer = null;
+
+  function showSaving() {
+    setStatus("saving", "saving...");
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const t = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+      setStatus("saved", "saved at " + t);
+    }, 500);
+  }
+
+  function setStatus(state, text) {
+    const el = document.getElementById("save-status");
+    el.className = state;
+    document.getElementById("status-text").textContent = text;
+  }
+
+  function updateInspector() {
+    const container = document.getElementById("inspector-rows");
+    container.innerHTML = "";
+    inputs.forEach(input => {
+      const key = `form_${input.name}`;
+      const val = sessionStorage.getItem(key);
+      const row = document.createElement("div");
+      row.className = "inspector-row";
+      row.innerHTML = `
+        <span class="ikey">${key}</span>
+        <span class="ival ${val ? '' : 'empty'}">${val || "empty"}</span>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  document.getElementById("submit-btn").onclick = submitForm;
+  document.getElementById("clear-btn").onclick = () => {
+    inputs.forEach(i => {
+      sessionStorage.removeItem(`form_${i.name}`);
+      i.value = "";
+    });
+    updateInspector();
+    setStatus("", "draft cleared");
+  };
+
+  // init inspector on load
+  updateInspector();
+  const anyRestored = [...inputs].some(i => i.value);
+  if (anyRestored) setStatus("saved", "draft restored from session");
+</script>
+</body>
+</html>

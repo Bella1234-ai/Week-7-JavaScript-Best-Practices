@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store Pattern</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #f0f4ff;
+  background-image: radial-gradient(circle at 15% 50%, #bfcbf0, transparent 50%),
+                    radial-gradient(circle at 85% 30%, #e9a5cf, transparent 50%);
+  min-height: 100vh;
+  padding: 40px 16px 80px;
+  display: flex;
+  justify-content: center;
+}
+
+.app { width: 100%; max-width: 780px; }
+
+h1 {
+  font-size: 30px;
+  font-weight: 900;
+  color: #060811;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+h1 span { color: #4c0fb6; }
+.subtitle { font-size: 13px; font-weight: 700; color: #5665af; margin-bottom: 28px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+/* CARDS */
+.card {
+  background: rgb(238, 172, 172);
+  border: 2px solid #b5bfe4;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 3px 0 #a8adc0;
+}
+
+.card-title {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+/* STORE STATE CARD */
+.state-display {
+  background: #08090f;
+  border-radius: 10px;
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.state-row { display: flex; justify-content: space-between; align-items: center; }
+.s-key { color: #5b618a; }
+.s-val { font-weight: 600; transition: color 0.3s; }
+.s-val.num   { color: #dd66a4; }
+.s-val.str   { color: #113327; }
+.s-val.bool  { color: #ad6734; }
+
+/* COUNTER COMPONENT */
+.counter-display {
+  font-size: 56px;
+  font-weight: 900;
+  color: #7c3aed;
+  text-align: center;
+  line-height: 1;
+  margin: 10px 0;
+  transition: transform 0.1s;
+}
+
+.counter-display.bump { transform: scale(1.15); }
+
+.btn-row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+
+.btn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 2px solid #dde2f5;
+  background: #f7f8ff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  color: #4a4f6e;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover { border-color: #7c3aed; color: #7c3aed; background: #f3efff; }
+.btn.primary {
+  background: #7c3aed; color: white; border-color: #7c3aed;
+  box-shadow: 0 3px 0 #5b21b6;
+}
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 0 #5b21b6; }
+.btn.primary:active { transform: translateY(2px); box-shadow: 0 1px 0 #5b21b6; }
+.btn.danger { border-color: #fecdd3; color: #f43f8e; }
+.btn.danger:hover { background: #fff0f6; border-color: #f43f8e; }
+
+/* SUBSCRIBERS */
+.sub-list { display: flex; flex-direction: column; gap: 8px; }
+
+.sub-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 2px solid #dde2f5;
+  background: #f7f8ff;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a4f6e;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.sub-item.active { border-color: #10b981; background: #eafaf4; }
+.sub-item.fired  { border-color: #7c3aed; background: #f3efff; animation: flash 0.4s ease; }
+
+@keyframes flash {
+  0%   { background: #ede9fe; }
+  100% { background: #f3efff; }
+}
+
+.sub-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #dde2f5;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.sub-item.active .sub-dot { background: #10b981; }
+.sub-item.fired  .sub-dot { background: #7c3aed; }
+
+.sub-name { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.sub-status { font-size: 10px; font-weight: 800; color: #9098be; }
+.sub-item.active .sub-status { color: #10b981; }
+.sub-item.fired  .sub-status { color: #7c3aed; }
+
+.unsub-btn {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1.5px solid #fecdd3;
+  background: none;
+  color: #f43f8e;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+}
+
+.unsub-btn:hover { background: #fff0f6; }
+.unsub-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* USER FORM component */
+.mini-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 2px solid #dde2f5;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1d2e;
+  background: #f7f8ff;
+  outline: none;
+  margin-bottom: 8px;
+  transition: border-color 0.15s;
+}
+
+.mini-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px #f3efff; }
+
+/* THEME toggle */
+.theme-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-opt {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid #dde2f5;
+  background: #f7f8ff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: #9098be;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.theme-opt.active { border-color: #f97316; color: #f97316; background: #fff4ec; }
+
+/* LOG */
+.log-wrap {
+  background: #1a1d2e;
+  border-radius: 12px;
+  padding: 14px;
+  height: 180px;
+  overflow-y: auto;
+}
+
+.log-wrap::-webkit-scrollbar { width: 4px; }
+.log-wrap::-webkit-scrollbar-thumb { background: #2e3350; border-radius: 2px; }
+
+.log-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #4a5080;
+  display: flex;
+  gap: 8px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.log-line .ts  { color: #3d4260; flex-shrink: 0; }
+.log-line .ev  { color: #a78bfa; }
+.log-line .val { color: #34d399; }
+.log-line .sub { color: #f97316; }
+.log-line .unsub-c { color: #f472b6; }
+
+/* LISTENER COUNT */
+.listener-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #9098be;
+  margin-top: 10px;
+}
+
+.listener-count .num { color: #7c3aed; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <h1>store <span>pattern</span></h1>
+  <p class="subtitle">Centralized state with subscribers — watch everything react live</p>
+
+  <div class="grid">
+
+    <!-- STATE SNAPSHOT -->
+    <div class="card">
+      <div class="card-title" style="color:#7c3aed">
+        <span>📦</span> Store State
+        <span class="badge" style="background:#f3efff;color:#7c3aed">localStorage</span>
+      </div>
+      <div class="state-display" id="state-display"></div>
+      <div class="listener-count">
+        Active listeners: <span class="num" id="listener-num">0</span>
+      </div>
+    </div>
+
+    <!-- SUBSCRIBERS -->
+    <div class="card">
+      <div class="card-title" style="color:#10b981">
+        <span>📡</span> Subscribers
+        <span class="badge" style="background:#eafaf4;color:#10b981">live</span>
+      </div>
+      <div class="sub-list" id="sub-list"></div>
+    </div>
+
+  </div>
+
+  <div class="grid three">
+
+    <!-- COUNTER COMPONENT -->
+    <div class="card">
+      <div class="card-title" style="color:#f43f8e"><span>🔢</span> Counter</div>
+      <div class="counter-display" id="counter-display">0</div>
+      <div class="btn-row">
+        <button class="btn danger" onclick="store.setState({ count: store.getState().count - 1 })">−</button>
+        <button class="btn primary" onclick="store.setState({ count: store.getState().count + 1 })">+</button>
+        <button class="btn" onclick="store.setState({ count: 0 })">Reset</button>
+      </div>
+    </div>
+
+    <!-- USERNAME COMPONENT -->
+    <div class="card">
+      <div class="card-title" style="color:#f97316"><span>👤</span> User</div>
+      <input class="mini-input" id="username-input" placeholder="Enter username..."
+        oninput="store.setState({ username: this.value })" />
+      <input class="mini-input" id="email-input" placeholder="Enter email..."
+        oninput="store.setState({ email: this.value })" />
+      <div style="font-size:12px;font-weight:700;color:#9098be">
+        Logged in as: <span id="user-display" style="color:#f97316">—</span>
+      </div>
+    </div>
+
+    <!-- THEME COMPONENT -->
+    <div class="card">
+      <div class="card-title" style="color:#06b6d4"><span>🎨</span> Theme</div>
+      <div class="theme-toggle" style="margin-bottom:12px">
+        <div class="theme-opt active" id="theme-light" onclick="store.setState({theme:'light'})">☀️ Light</div>
+        <div class="theme-opt" id="theme-dark"  onclick="store.setState({theme:'dark'})">🌙 Dark</div>
+        <div class="theme-opt" id="theme-pink"  onclick="store.setState({theme:'pink'})">🌸 Pink</div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:#9098be">
+        Current: <span id="theme-display" style="color:#06b6d4">light</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EVENT LOG -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title" style="color:#f472b6;justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:8px"><span>📋</span> Event Log <span class="badge" style="background:#fff0f6;color:#f472b6">console.log equivalent</span></span>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-wrap" id="log"></div>
+  </div>
+
+</div>
+
+<script>
+// ── EXACT PATTERN FROM THE EXERCISE ──────────────────────────────────
+
+const createStore = (initialState) => {
+  let state = initialState;
+  const listeners = [];
+
+  return {
+    getState: () => state,
+
+    setState: (updates) => {
+      state = { ...state, ...updates };
+      // Notify all listeners
+      listeners.forEach(listener => listener(state));
+    },
+
+    subscribe: (listener) => {
+      listeners.push(listener);
+      // Return unsubscribe function
+      return () => {
+        const index = listeners.indexOf(listener);
+        listeners.splice(index, 1);
+      };
+    },
+
+    // helper to expose count for UI
+    listenerCount: () => listeners.length
+  };
+};
+
+// ── CREATE STORE ──────────────────────────────────────────────────────
+
+const saved = localStorage.getItem("storeState");
+const initial = saved ? JSON.parse(saved) : { count: 0, username: "", email: "", theme: "light" };
+
+const store = createStore(initial);
+
+// ── SUBSCRIBERS ───────────────────────────────────────────────────────
+
+const subscribers = {}; // id → { name, unsubscribe, el }
+
+function addSubscriber(name, fn) {
+  const id = Date.now();
+  const unsubscribe = store.subscribe((state) => {
+    // flash the subscriber row
+    const row = document.getElementById(`sub-${id}`);
+    if (row) {
+      row.classList.remove('fired');
+      void row.offsetWidth;
+      row.classList.add('fired');
+      row.querySelector('.sub-status').textContent = 'notified';
+      setTimeout(() => {
+        if (row) row.querySelector('.sub-status').textContent = 'listening';
+      }, 600);
+    }
+    logEvent('notify', `${name}(state)`, JSON.stringify(state).slice(0,60)+'…');
+    fn(state);
+  });
+  subscribers[id] = { name, unsubscribe };
+  renderSubList();
+  logEvent('subscribe', name, 'subscribed');
+  return id;
+}
+
+function removeSubscriber(id) {
+  if (!subscribers[id]) return;
+  subscribers[id].unsubscribe();
+  logEvent('unsubscribe', subscribers[id].name, 'unsubscribed');
+  delete subscribers[id];
+  renderSubList();
+  updateListenerCount();
+}
+
+function renderSubList() {
+  const list = document.getElementById('sub-list');
+  const ids = Object.keys(subscribers);
+  if (ids.length === 0) {
+    list.innerHTML = `<div style="font-size:13px;font-weight:700;color:#9098be;text-align:center;padding:20px">No active subscribers</div>`;
+    return;
+  }
+  list.innerHTML = ids.map(id => `
+    <div class="sub-item active" id="sub-${id}">
+      <div class="sub-dot"></div>
+      <span class="sub-name">${subscribers[id].name}</span>
+      <span class="sub-status">listening</span>
+      <button class="unsub-btn" onclick="removeSubscriber(${id})">unsub</button>
+    </div>
+  `).join('');
+  updateListenerCount();
+}
+
+function updateListenerCount() {
+  document.getElementById('listener-num').textContent = store.listenerCount();
+}
+
+// ── RENDER FUNCTIONS (called by subscribers) ──────────────────────────
+
+function renderCounter(state) {
+  const el = document.getElementById('counter-display');
+  el.textContent = state.count;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+  setTimeout(() => el.classList.remove('bump'), 150);
+}
+
+function renderUser(state) {
+  document.getElementById('user-display').textContent =
+    state.username ? `${state.username} (${state.email || 'no email'})` : '—';
+  // sync inputs without re-triggering oninput
+  const ui = document.getElementById('username-input');
+  const ei = document.getElementById('email-input');
+  if (document.activeElement !== ui) ui.value = state.username || '';
+  if (document.activeElement !== ei) ei.value = state.email    || '';
+}
+
+function renderTheme(state) {
+  document.getElementById('theme-display').textContent = state.theme;
+  ['light','dark','pink'].forEach(t => {
+    document.getElementById(`theme-${t}`).classList.toggle('active', state.theme === t);
+  });
+}
+
+function renderStateSnapshot(state) {
+  const el = document.getElementById('state-display');
+  el.innerHTML = Object.entries(state).map(([k, v]) => {
+    const type = typeof v;
+    const cls  = type === 'number' ? 'num' : type === 'boolean' ? 'bool' : 'str';
+    const disp = type === 'string' ? `"${v}"` : String(v);
+    return `<div class="state-row">
+      <span class="s-key">${k}:</span>
+      <span class="s-val ${cls}">${disp}</span>
+    </div>`;
+  }).join('');
+  updateListenerCount();
+}
+
+function persistState(state) {
+  localStorage.setItem("storeState", JSON.stringify(state));
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────
+
+function logEvent(type, name, detail) {
+  const log  = document.getElementById('log');
+  const ts   = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  const typeClass = type === 'subscribe' ? 'sub' : type === 'unsubscribe' ? 'unsub-c' : 'ev';
+  line.innerHTML = `<span class="ts">${ts}</span><span class="${typeClass}">[${type}]</span><span class="val">${name}</span><span style="color:#3d4260">${detail}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+}
+
+// ── WIRE UP SUBSCRIBERS ───────────────────────────────────────────────
+
+addSubscriber('renderStateSnapshot', renderStateSnapshot);
+addSubscriber('renderCounter',       renderCounter);
+addSubscriber('renderUser',          renderUser);
+addSubscriber('renderTheme',         renderTheme);
+addSubscriber('persistState',        persistState);
+
+// trigger initial render
+store.setState({});
+
+// expose removeSubscriber globally for onclick
+window.removeSubscriber = removeSubscriber;
+</script>
+</body>
+</html>
